@@ -2,7 +2,6 @@ package dto
 
 import (
 	"fmt"
-	"math"
 	"task/internal/entities"
 )
 
@@ -28,7 +27,7 @@ func ToEntityModel(data RegisterRouteRequestBody) (route entities.Route, err err
 		return entities.Route{}, fmt.Errorf("route name should not be empty")
 	}
 
-	if math.Abs(float64(data.Load)) < eps {
+	if data.Load < 0.0 {
 		return entities.Route{}, fmt.Errorf("load should be non-negative")
 	}
 

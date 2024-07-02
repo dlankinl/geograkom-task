@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -9,10 +10,11 @@ import (
 	"task/internal/repositories"
 )
 
+//go:generate mockgen -source=route.go -destination=../mocks/route.go -package=mocks
 type RouteService interface {
-	Register(data dto.RegisterRouteRequestBody) error
-	GetById(id int) (entities.Route, error)
-	DeleteByIds(ids dto.DeleteRoutesRequestBody) error
+	Register(ctx context.Context, data dto.RegisterRouteRequestBody) error
+	GetById(ctx context.Context, id int) (entities.Route, error)
+	DeleteByIds(ctx context.Context, ids dto.DeleteRoutesRequestBody) error
 }
 
 type routeService struct {
@@ -23,13 +25,13 @@ func NewRouteService(repo repositories.RouteRepo) RouteService {
 	return &routeService{repo: repo}
 }
 
-func (s *routeService) Register(data dto.RegisterRouteRequestBody) (err error) {
+func (s *routeService) Register(ctx context.Context, data dto.RegisterRouteRequestBody) (err error) {
 	route, err := dto.ToEntityModel(data)
 	if err != nil {
 		return fmt.Errorf("converting dto to entity model: %w", err)
 	}
 
-	err = s.repo.Register(route)
+	err = s.repo.Register(ctx, route)
 	if err != nil {
 		return fmt.Errorf("route registration: %w", err)
 	}
@@ -37,8 +39,12 @@ func (s *routeService) Register(data dto.RegisterRouteRequestBody) (err error) {
 	return nil
 }
 
-func (s *routeService) GetById(id int) (route entities.Route, err error) {
-	route, err = s.repo.GetById(id)
+func (s *routeService) GetById(ctx context.Context, id int) (route entities.Route, err error) {
+	if id < 0 {
+		return entities.Route{}, fmt.Errorf("route id should be non-negative")
+	}
+
+	route, err = s.repo.GetById(ctx, id)
 	if err != nil {
 		return entities.Route{}, fmt.Errorf("getting route by id: %w", err)
 	}
@@ -46,14 +52,15 @@ func (s *routeService) GetById(id int) (route entities.Route, err error) {
 	return route, nil
 }
 
-func (s *routeService) DeleteByIds(ids dto.DeleteRoutesRequestBody) (err error) {
+// TODO: maybe implement in another way
+func (s *routeService) DeleteByIds(ctx context.Context, ids dto.DeleteRoutesRequestBody) (err error) {
 	errs := make([]error, 0)
 
 	var wg sync.WaitGroup
 	for _, id := range ids.RouteIDs {
 		wg.Add(1)
 		go func(routeID int) {
-			inErr := s.repo.DeleteById(routeID)
+			inErr := s.repo.DeleteById(ctx, routeID)
 			if inErr != nil {
 				errs = append(errs, inErr)
 			}
