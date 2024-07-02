@@ -61,8 +61,7 @@ func (r *routeRepo) GetById(ctx context.Context, id int) (route entities.Route, 
     			load, 
        			cargo_type 
 			from routes
-			where route_id = :1
-				and is_actual = true`,
+			where route_id = :1`,
 		id,
 	).Scan(
 		&route.RouteID,

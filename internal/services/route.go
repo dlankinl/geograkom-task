@@ -10,7 +10,6 @@ import (
 	"task/internal/repositories"
 )
 
-//go:generate mockgen -source=route.go -destination=../mocks/route.go -package=mocks
 type RouteService interface {
 	Register(ctx context.Context, data dto.RegisterRouteRequestBody) error
 	GetById(ctx context.Context, id int) (entities.Route, error)
