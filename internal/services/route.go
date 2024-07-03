@@ -2,12 +2,11 @@ package services
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"sync"
 	"task/internal/dto"
 	"task/internal/entities"
 	"task/internal/repositories"
+	"time"
 )
 
 type RouteService interface {
@@ -51,26 +50,24 @@ func (s *routeService) GetById(ctx context.Context, id int) (route entities.Rout
 	return route, nil
 }
 
-// TODO: maybe implement in another way
 func (s *routeService) DeleteByIds(ctx context.Context, ids dto.DeleteRoutesRequestBody) (err error) {
-	errs := make([]error, 0)
-
-	var wg sync.WaitGroup
-	for _, id := range ids.RouteIDs {
-		wg.Add(1)
-		go func(routeID int) {
-			inErr := s.repo.DeleteById(ctx, routeID)
-			if inErr != nil {
-				errs = append(errs, inErr)
-			}
-			wg.Done()
-		}(id)
+	for _, val := range ids.RouteIDs {
+		if val < 0 {
+			return fmt.Errorf("deleting routes: ids should be non-negative")
+		}
 	}
-	wg.Wait()
 
-	if len(errs) > 0 {
-		return fmt.Errorf("deleting routes: %w", errors.Join(errs...))
-	}
+	go func() {
+		// new context because after getting http response on this request original request context is cancelled
+		delCtx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+		defer cancel()
+
+		err = s.repo.DeleteById(delCtx, ids.RouteIDs)
+		if err != nil {
+			// TODO: replace with log msg
+			fmt.Printf("deleting routes: %v\n", err)
+		}
+	}()
 
 	return nil
 }

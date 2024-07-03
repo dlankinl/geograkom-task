@@ -3,6 +3,7 @@ package delivery
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-chi/chi/v5"
 	"net/http"
 	"strconv"
 	"task/internal/app"
@@ -36,7 +37,7 @@ func GetHandler(app *app.App) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		prompt := "get handler"
 
-		id := r.URL.Query().Get("id")
+		id := chi.URLParam(r, "id")
 		if id == "" {
 			errorResponse(w, fmt.Errorf("%s: empty id", prompt).Error(), http.StatusInternalServerError)
 			return
@@ -73,7 +74,7 @@ func DeleteHandler(app *app.App) http.HandlerFunc {
 
 		var req dto.DeleteRoutesRequestBody
 
-		err := json.NewDecoder(r.Body).Decode(&req)
+		err := json.NewDecoder(r.Body).Decode(&req.RouteIDs)
 		if err != nil {
 			errorResponse(w, fmt.Errorf("%s: %w", prompt, err).Error(), http.StatusInternalServerError)
 			return

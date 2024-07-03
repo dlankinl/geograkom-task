@@ -27,7 +27,7 @@ func ToEntityModel(data RegisterRouteRequestBody) (route entities.Route, err err
 		return entities.Route{}, fmt.Errorf("route name should not be empty")
 	}
 
-	if data.Load < 0.0 {
+	if data.Load < eps {
 		return entities.Route{}, fmt.Errorf("load should be non-negative")
 	}
 

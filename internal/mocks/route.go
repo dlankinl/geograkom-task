@@ -41,17 +41,17 @@ func (m *MockRouteRepo) EXPECT() *MockRouteRepoMockRecorder {
 }
 
 // DeleteById mocks base method.
-func (m *MockRouteRepo) DeleteById(ctx context.Context, id int) error {
+func (m *MockRouteRepo) DeleteById(ctx context.Context, ids []int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteById", ctx, id)
+	ret := m.ctrl.Call(m, "DeleteById", ctx, ids)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteById indicates an expected call of DeleteById.
-func (mr *MockRouteRepoMockRecorder) DeleteById(ctx, id any) *gomock.Call {
+func (mr *MockRouteRepoMockRecorder) DeleteById(ctx, ids any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteById", reflect.TypeOf((*MockRouteRepo)(nil).DeleteById), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteById", reflect.TypeOf((*MockRouteRepo)(nil).DeleteById), ctx, ids)
 }
 
 // GetById mocks base method.
@@ -70,29 +70,15 @@ func (mr *MockRouteRepoMockRecorder) GetById(ctx, id any) *gomock.Call {
 }
 
 // Register mocks base method.
-func (m *MockRouteRepo) Register(ctx context.Context, cargo entities.Route) error {
+func (m *MockRouteRepo) Register(ctx context.Context, route entities.Route) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Register", ctx, cargo)
+	ret := m.ctrl.Call(m, "Register", ctx, route)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Register indicates an expected call of Register.
-func (mr *MockRouteRepoMockRecorder) Register(ctx, cargo any) *gomock.Call {
+func (mr *MockRouteRepoMockRecorder) Register(ctx, route any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockRouteRepo)(nil).Register), ctx, cargo)
-}
-
-// SetInactual mocks base method.
-func (m *MockRouteRepo) SetInactual(ctx context.Context, id int) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetInactual", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetInactual indicates an expected call of SetInactual.
-func (mr *MockRouteRepoMockRecorder) SetInactual(ctx, id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetInactual", reflect.TypeOf((*MockRouteRepo)(nil).SetInactual), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockRouteRepo)(nil).Register), ctx, route)
 }

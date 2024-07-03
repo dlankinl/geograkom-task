@@ -9,6 +9,7 @@ import (
 	"task/internal/entities"
 	"task/internal/mocks"
 	"testing"
+	"time"
 )
 
 func TestDeleteByIds(t *testing.T) {
@@ -30,16 +31,22 @@ func TestDeleteByIds(t *testing.T) {
 			wantErr: false,
 			ids:     dto.DeleteRoutesRequestBody{RouteIDs: []int{1, 2, 3}},
 			beforeTest: func(repo mocks.MockRouteRepo) {
-				repo.EXPECT().DeleteById(context.Background(), 1).Return(nil)
-				repo.EXPECT().DeleteById(context.Background(), 2).Return(nil)
-				repo.EXPECT().DeleteById(context.Background(), 3).Return(nil)
+				repo.EXPECT().DeleteById(gomock.Any(), []int{1, 2, 3}).Return(nil)
 			},
 		},
 		{
-			name:       "empty ids",
-			wantErr:    false,
-			ids:        dto.DeleteRoutesRequestBody{RouteIDs: []int{}},
-			beforeTest: func(repo mocks.MockRouteRepo) {},
+			name:    "empty ids",
+			wantErr: false,
+			ids:     dto.DeleteRoutesRequestBody{RouteIDs: []int{}},
+			beforeTest: func(repo mocks.MockRouteRepo) {
+				repo.EXPECT().DeleteById(gomock.Any(), []int{}).Return(nil)
+			},
+		},
+		{
+			name:    "negative id",
+			wantErr: true,
+			ids:     dto.DeleteRoutesRequestBody{RouteIDs: []int{1, -2, 3}},
+			err:     fmt.Errorf("deleting routes: ids should be non-negative"),
 		},
 	}
 	for _, tc := range testCases {
@@ -55,6 +62,9 @@ func TestDeleteByIds(t *testing.T) {
 			} else {
 				require.Nil(t, err)
 			}
+
+			// TODO: give goroutine time to complete ;)
+			time.Sleep(100 * time.Millisecond)
 		})
 	}
 }
@@ -84,7 +94,7 @@ func TestGetById(t *testing.T) {
 				CargoType: "sand",
 			},
 			beforeTest: func(repo mocks.MockRouteRepo) {
-				repo.EXPECT().GetById(context.Background(), 1).Return(entities.Route{
+				repo.EXPECT().GetById(gomock.Any(), 1).Return(entities.Route{
 					RouteID:   1,
 					RouteName: "test",
 					Load:      1000.0,
@@ -104,7 +114,7 @@ func TestGetById(t *testing.T) {
 			id:   1,
 			beforeTest: func(repo mocks.MockRouteRepo) {
 				repo.EXPECT().
-					GetById(context.Background(), 1).
+					GetById(gomock.Any(), 1).
 					Return(
 						entities.Route{},
 						fmt.Errorf("some repo error"),
@@ -157,7 +167,7 @@ func TestRegister(t *testing.T) {
 			beforeTest: func(repo mocks.MockRouteRepo) {
 				repo.EXPECT().
 					Register(
-						context.Background(),
+						gomock.Any(),
 						entities.Route{
 							RouteID:   1,
 							RouteName: "test",
@@ -175,9 +185,8 @@ func TestRegister(t *testing.T) {
 				Load:      -1000.0,
 				CargoType: "sand",
 			},
-			beforeTest: func(repo mocks.MockRouteRepo) {},
-			wantErr:    true,
-			err:        fmt.Errorf("converting dto to entity model: load should be non-negative"),
+			wantErr: true,
+			err:     fmt.Errorf("converting dto to entity model: load should be non-negative"),
 		},
 		{
 			name: "error in repository",
@@ -190,7 +199,7 @@ func TestRegister(t *testing.T) {
 			beforeTest: func(repo mocks.MockRouteRepo) {
 				repo.EXPECT().
 					Register(
-						context.Background(),
+						gomock.Any(),
 						entities.Route{
 							RouteID:   1,
 							RouteName: "test",
