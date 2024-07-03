@@ -1,0 +1,41 @@
+version: '3.9'
+
+services:
+  db:
+    container_name: db_geograkom
+    image: postgres:latest
+    ports:
+      - '5434:5432'
+    environment:
+      - POSTGRES_USERNAME=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DATABASE=postgres
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+  server:
+    container_name: server_geograkom
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - SERVER_ADDRESS=server:8080
+      - CONNECTION_STRING=postgres://postgres:postgres@db:5432/postgres
+    ports:
+      - '8080:8080'
+    depends_on:
+      - db
+      - migrate
+  migrate:
+    container_name: migrate
+    image: migrate/migrate
+    volumes:
+      - ./migrations/:/migrations
+    command: [ "-path", "/migrations", "-database",  "postgres://postgres:postgres@db:5432/postgres?sslmode=disable", "up"]
+    links:
+      - db
+    depends_on:
+      - db
+
+volumes:
+  postgres-db:
+    driver: local

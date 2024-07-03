@@ -63,7 +63,7 @@ func TestDeleteByIds(t *testing.T) {
 				require.Nil(t, err)
 			}
 
-			// TODO: give goroutine time to complete ;)
+			// goroutine needs time to complete ;)
 			time.Sleep(100 * time.Millisecond)
 		})
 	}

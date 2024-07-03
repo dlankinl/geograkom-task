@@ -20,6 +20,25 @@ type config struct {
 	connStr string
 }
 
+func checkVersion(db *pgx.Conn) (ok bool, err error) {
+	query := `
+		select count(1)
+		from information_schema.tables 
+		where table_name = 'routes'
+		limit 1`
+
+	var val int
+	err = db.QueryRow(context.Background(), query).Scan(&val)
+	if err != nil {
+		return false, fmt.Errorf("check table: %w", err)
+	}
+	if val == 1 {
+		ok = true
+	}
+
+	return ok, nil
+}
+
 func newConn(ctx context.Context, connStr string) (db *pgx.Conn, err error) {
 	db, err = pgx.Connect(ctx, connStr)
 	if err != nil {
@@ -71,6 +90,14 @@ func main() {
 	db, err := newConn(context.Background(), cfg.connStr)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	ok, err := checkVersion(db)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !ok {
+		log.Fatal("you need to run migrations before running server")
 	}
 
 	a := app.NewApp(db)
