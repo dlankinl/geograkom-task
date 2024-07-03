@@ -10,7 +10,7 @@ import (
 )
 
 type RouteService interface {
-	Register(ctx context.Context, data dto.RegisterRouteRequestBody) error
+	Register(ctx context.Context, data dto.RegisterRouteRequestBody) (bool, error)
 	GetById(ctx context.Context, id int) (entities.Route, error)
 	DeleteByIds(ctx context.Context, ids dto.DeleteRoutesRequestBody) error
 }
@@ -23,18 +23,18 @@ func NewRouteService(repo repositories.RouteRepo) RouteService {
 	return &routeService{repo: repo}
 }
 
-func (s *routeService) Register(ctx context.Context, data dto.RegisterRouteRequestBody) (err error) {
+func (s *routeService) Register(ctx context.Context, data dto.RegisterRouteRequestBody) (old bool, err error) {
 	route, err := dto.ToEntityModel(data)
 	if err != nil {
-		return fmt.Errorf("converting dto to entity model: %w", err)
+		return false, fmt.Errorf("converting dto to entity model: %w", err)
 	}
 
-	err = s.repo.Register(ctx, route)
+	old, err = s.repo.Register(ctx, route)
 	if err != nil {
-		return fmt.Errorf("route registration: %w", err)
+		return false, fmt.Errorf("route registration: %w", err)
 	}
 
-	return nil
+	return old, nil
 }
 
 func (s *routeService) GetById(ctx context.Context, id int) (route entities.Route, err error) {

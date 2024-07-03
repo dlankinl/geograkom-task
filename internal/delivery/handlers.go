@@ -22,14 +22,17 @@ func RegisterHandler(app *app.App) http.HandlerFunc {
 			return
 		}
 
-		err = app.Svc.Register(r.Context(), req)
+		old, err := app.Svc.Register(r.Context(), req)
 		if err != nil {
 			errorResponse(w, fmt.Errorf("%s: %w", prompt, err).Error(), http.StatusInternalServerError)
 			return
 		}
 
-		// TODO: 208 code
-		successResponse(w, http.StatusOK, nil)
+		statusCode := http.StatusOK
+		if old {
+			statusCode = http.StatusAlreadyReported
+		}
+		successResponse(w, statusCode, nil)
 	}
 }
 

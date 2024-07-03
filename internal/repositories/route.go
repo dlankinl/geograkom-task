@@ -9,7 +9,7 @@ import (
 
 //go:generate mockgen -source=route.go -destination=../mocks/route.go -package=mocks
 type RouteRepo interface {
-	Register(ctx context.Context, route entities.Route) error
+	Register(ctx context.Context, route entities.Route) (bool, error)
 	GetById(ctx context.Context, id int) (entities.Route, error)
 	DeleteById(ctx context.Context, ids []int) error
 }
@@ -24,8 +24,8 @@ func NewRouteRepo(db *pgx.Conn) RouteRepo {
 	}
 }
 
-func (r *routeRepo) Register(ctx context.Context, route entities.Route) (err error) {
-	_, err = r.db.Exec(
+func (r *routeRepo) Register(ctx context.Context, route entities.Route) (old bool, err error) {
+	err = r.db.QueryRow(
 		ctx,
 		`with try as (
 				insert into routes(route_id, route_name, load, cargo_type)
@@ -34,22 +34,30 @@ func (r *routeRepo) Register(ctx context.Context, route entities.Route) (err err
 						is_actual = false
 					returning (xmax = 0) as inserted
 			), new_id as (
-				select max(route_id) + 1 as route_id from routes
+				select max(route_id) + 1 as route_id
+				from routes
+			), insert_new as (
+				insert into routes(route_id, route_name, load, cargo_type)
+					select new_id.route_id, $2, $3, $4
+					from new_id
+					where not exists (select 1 from try where inserted)
+					returning true as inserted_new_id
 			)
-			insert into routes(route_id, route_name, load, cargo_type)
-			select new_id.route_id, $2, $3, $4
-			from new_id
-			where not exists (select 1 from try where inserted)`,
+			select
+				case
+					when exists (select 1 from insert_new) then true
+						else false
+				end as result`,
 		route.RouteID,
 		route.RouteName,
 		route.Load,
 		route.CargoType,
-	)
+	).Scan(&old)
 	if err != nil {
-		return fmt.Errorf("register route: %w", err)
+		return false, fmt.Errorf("register route: %w", err)
 	}
 
-	return nil
+	return old, nil
 }
 
 func (r *routeRepo) GetById(ctx context.Context, id int) (route entities.Route, err error) {

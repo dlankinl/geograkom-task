@@ -88,7 +88,7 @@ func TestRegister(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := repo.Register(context.Background(), tc.data)
+			_, err := repo.Register(context.Background(), tc.data)
 
 			if tc.wantErr {
 				require.Equal(t, tc.err.Error(), err.Error())

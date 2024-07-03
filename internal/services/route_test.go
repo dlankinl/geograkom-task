@@ -174,7 +174,7 @@ func TestRegister(t *testing.T) {
 							Load:      1000.0,
 							CargoType: "sand",
 						}).
-					Return(nil)
+					Return(false, nil)
 			},
 		},
 		{
@@ -206,7 +206,7 @@ func TestRegister(t *testing.T) {
 							Load:      1000.0,
 							CargoType: "sand",
 						}).
-					Return(fmt.Errorf("some repo error"))
+					Return(false, fmt.Errorf("some repo error"))
 			},
 			wantErr: true,
 			err:     fmt.Errorf("route registration: some repo error"),
@@ -218,7 +218,7 @@ func TestRegister(t *testing.T) {
 				tc.beforeTest(*repo)
 			}
 
-			err := svc.Register(context.Background(), tc.data)
+			_, err := svc.Register(context.Background(), tc.data)
 
 			if tc.wantErr {
 				require.Equal(t, tc.err.Error(), err.Error())
