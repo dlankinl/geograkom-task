@@ -70,10 +70,10 @@ func (mr *MockRouteRepoMockRecorder) GetById(ctx, id any) *gomock.Call {
 }
 
 // Register mocks base method.
-func (m *MockRouteRepo) Register(ctx context.Context, route entities.Route) (bool, error) {
+func (m *MockRouteRepo) Register(ctx context.Context, route entities.Route) (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Register", ctx, route)
-	ret0, _ := ret[0].(bool)
+	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

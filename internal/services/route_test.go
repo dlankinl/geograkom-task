@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const eps = 1e-6
+
 func TestDeleteByIds(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -135,8 +137,11 @@ func TestGetById(t *testing.T) {
 			if tc.wantErr {
 				require.Equal(t, tc.err.Error(), err.Error())
 			} else {
-				require.Equal(t, tc.expected, route)
 				require.Nil(t, err)
+				require.Equal(t, tc.expected.RouteID, route.RouteID)
+				require.Equal(t, tc.expected.RouteName, route.RouteName)
+				require.InEpsilon(t, tc.expected.Load, route.Load, eps)
+				require.Equal(t, tc.expected.CargoType, route.CargoType)
 			}
 		})
 	}
@@ -150,11 +155,12 @@ func TestRegister(t *testing.T) {
 	svc := NewRouteService(repo)
 
 	testCases := []struct {
-		name       string
-		data       dto.RegisterRouteRequestBody
-		beforeTest func(repo mocks.MockRouteRepo)
-		wantErr    bool
-		err        error
+		name            string
+		data            dto.RegisterRouteRequestBody
+		expectedRouteId int
+		beforeTest      func(repo mocks.MockRouteRepo)
+		wantErr         bool
+		err             error
 	}{
 		{
 			name: "success",
@@ -174,8 +180,9 @@ func TestRegister(t *testing.T) {
 							Load:      1000.0,
 							CargoType: "sand",
 						}).
-					Return(false, nil)
+					Return(1, nil)
 			},
+			expectedRouteId: 1,
 		},
 		{
 			name: "negative load",
@@ -206,7 +213,7 @@ func TestRegister(t *testing.T) {
 							Load:      1000.0,
 							CargoType: "sand",
 						}).
-					Return(false, fmt.Errorf("some repo error"))
+					Return(0, fmt.Errorf("some repo error"))
 			},
 			wantErr: true,
 			err:     fmt.Errorf("route registration: some repo error"),
@@ -218,12 +225,13 @@ func TestRegister(t *testing.T) {
 				tc.beforeTest(*repo)
 			}
 
-			_, err := svc.Register(context.Background(), tc.data)
+			routeId, err := svc.Register(context.Background(), tc.data)
 
 			if tc.wantErr {
 				require.Equal(t, tc.err.Error(), err.Error())
 			} else {
 				require.Nil(t, err)
+				require.Equal(t, tc.expectedRouteId, routeId)
 			}
 		})
 	}

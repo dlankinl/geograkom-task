@@ -22,17 +22,19 @@ func RegisterHandler(app *app.App) http.HandlerFunc {
 			return
 		}
 
-		old, err := app.Svc.Register(r.Context(), req)
+		routeId, err := app.Svc.Register(r.Context(), req)
 		if err != nil {
 			errorResponse(w, fmt.Errorf("%s: %w", prompt, err).Error(), http.StatusInternalServerError)
 			return
 		}
 
 		statusCode := http.StatusOK
-		if old {
+		var respMap = make(map[string]any)
+		if routeId != req.RouteID {
 			statusCode = http.StatusAlreadyReported
+			respMap["route_id"] = routeId
 		}
-		successResponse(w, statusCode, nil)
+		successResponse(w, statusCode, respMap)
 	}
 }
 

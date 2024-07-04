@@ -9,7 +9,7 @@ import (
 
 //go:generate mockgen -source=route.go -destination=../mocks/route.go -package=mocks
 type RouteRepo interface {
-	Register(ctx context.Context, route entities.Route) (bool, error)
+	Register(ctx context.Context, route entities.Route) (int, error)
 	GetById(ctx context.Context, id int) (entities.Route, error)
 	DeleteById(ctx context.Context, ids []int) error
 }
@@ -24,40 +24,40 @@ func NewRouteRepo(db *pgx.Conn) RouteRepo {
 	}
 }
 
-func (r *routeRepo) Register(ctx context.Context, route entities.Route) (old bool, err error) {
+func (r *routeRepo) Register(ctx context.Context, route entities.Route) (routeId int, err error) {
 	err = r.db.QueryRow(
 		ctx,
 		`with try as (
-				insert into routes(route_id, route_name, load, cargo_type)
-					values($1, $2, $3, $4)
-					on conflict(route_id) do update set
-						is_actual = false
-					returning (xmax = 0) as inserted
-			), new_id as (
-				select max(route_id) + 1 as route_id
-				from routes
-			), insert_new as (
-				insert into routes(route_id, route_name, load, cargo_type)
-					select new_id.route_id, $2, $3, $4
-					from new_id
-					where not exists (select 1 from try where inserted)
-					returning true as inserted_new_id
-			)
-			select
-				case
-					when exists (select 1 from insert_new) then true
-						else false
-				end as result`,
+			insert into routes(route_id, route_name, load, cargo_type)
+				values($1, $2, $3, $4)
+				on conflict(route_id) do update set
+					is_actual = false
+				returning route_id, (xmax = 0) as inserted
+		), new_id as (
+			select max(route_id) + 1 as route_id
+			from routes
+		), insert_new as (
+			insert into routes(route_id, route_name, load, cargo_type)
+				select new_id.route_id, $2, $3, $4
+				from new_id
+				where not exists (select 1 from try where inserted)
+				returning route_id
+		)
+		select
+			coalesce(
+					(select route_id from try where inserted),
+					(select route_id from insert_new)
+				) as inserted_id`,
 		route.RouteID,
 		route.RouteName,
 		route.Load,
 		route.CargoType,
-	).Scan(&old)
+	).Scan(&routeId)
 	if err != nil {
-		return false, fmt.Errorf("register route: %w", err)
+		return 0, fmt.Errorf("register route: %w", err)
 	}
 
-	return old, nil
+	return routeId, nil
 }
 
 func (r *routeRepo) GetById(ctx context.Context, id int) (route entities.Route, err error) {

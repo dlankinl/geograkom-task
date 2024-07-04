@@ -1,0 +1,19 @@
+###
+GET http://localhost:8080/api/route/1
+
+###
+POST http://localhost:8080/api/route/register
+Content-Type: application/json
+
+{
+  "route_id": 10,
+  "route_name": "test1",
+  "load": 1,
+  "cargo_type": "sand"
+}
+
+###
+DELETE http://localhost:8080/api/route
+Content-Type: text/plain
+
+[100, 102, 101, 103, 1000]
