@@ -25,7 +25,21 @@ func NewRouteRepo(db *pgx.Conn) RouteRepo {
 }
 
 func (r *routeRepo) Register(ctx context.Context, route entities.Route) (routeId int, err error) {
-	err = r.db.QueryRow(
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return 0, fmt.Errorf("begin transaction: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			rollbackErr := tx.Rollback(ctx)
+			if rollbackErr != nil {
+				err = fmt.Errorf("rollback err: %w; handled err: %v", rollbackErr, err)
+			}
+		}
+	}()
+
+	err = tx.QueryRow(
 		ctx,
 		`with try as (
 			insert into routes(route_id, route_name, load, cargo_type)
@@ -55,6 +69,11 @@ func (r *routeRepo) Register(ctx context.Context, route entities.Route) (routeId
 	).Scan(&routeId)
 	if err != nil {
 		return 0, fmt.Errorf("register route: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("commit transaction: %w", err)
 	}
 
 	return routeId, nil
